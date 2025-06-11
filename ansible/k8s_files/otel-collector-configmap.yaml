@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: default
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: "0.0.0.0:4318"
+    exporters:
+      loki:
+        endpoint: http://loki:3100/loki/api/v1/push
+
+      prometheus:
+        endpoint: "0.0.0.0:8889"
+
+      otlp/uptrace:
+        endpoint: http://uptrace.default.svc.cluster.local:14317
+        tls: { insecure: true }
+        headers:
+          uptrace-dsn: 'http://project1_secret_token@uptrace.default.svc.cluster.local:14318?grpc=14317'
+
+      debug:
+        verbosity: detailed
+
+    service:
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          exporters: [prometheus]
+        traces:
+          receivers: [otlp]
+          exporters: [otlp/uptrace, debug]
+        logs:
+          receivers: [otlp]
+          exporters: [loki]

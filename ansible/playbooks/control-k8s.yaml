@@ -1,0 +1,128 @@
+---
+- hosts: control
+  become: yes
+
+  environment:
+    K8S_AUTH_KUBECONFIG: "{{ k8s_kubeconfig }}"
+    K8S_AUTH_CONTEXT: "control"
+
+  tasks:
+
+    - name: Check if Helm is installed
+      shell: helm version --short
+      register: helm_version_result
+      ignore_errors: true
+      become: yes
+
+    - name: Set Helm installed fact
+      set_fact:
+        helm_installed: "{{ helm_version_result.rc == 0 }}"
+
+    - name: Include helm playbook if Helm is not installed
+      import_tasks: helm-install.yaml
+      become: yes
+      when: not helm_installed
+
+    - name: Render Grafana k8s secret
+      template:
+        src: /home/vagrant/ansible/j2_files/grafana-secret.yaml.j2
+        dest: /home/vagrant/ansible/k8s_files/grafana-secret.yaml
+
+    - name: Create the Grafana secret
+      kubernetes.core.k8s:
+        state: present
+        src: /home/vagrant/ansible/k8s_files/grafana-secret.yaml
+
+    - name: Render MinIO k8s secret
+      template:
+        src: /home/vagrant/ansible/j2_files/minio-secret.yaml.j2
+        dest: /home/vagrant/ansible/k8s_files/minio-secret.yaml
+
+    - name: Create the MinIO secret
+      kubernetes.core.k8s:
+        state: present
+        src: /home/vagrant/ansible/k8s_files/minio-secret.yaml
+
+    - name: Render Loki values.yaml with secrets
+      template:
+        src: /home/vagrant/ansible/j2_files/loki-values.yaml.j2
+        dest: /home/vagrant/ansible/files/loki-values.yaml
+
+    - name: Create a configmap of alert rules
+      kubernetes.core.k8s:
+        state: present
+        src: /home/vagrant/ansible/k8s_files/{{ item }}
+        context: control
+      loop:
+        - grafana-alert-rules.yaml
+        - grafana-dashboards.yaml
+
+    - name: Add minIO chart repo
+      kubernetes.core.helm_repository:
+        name: bitnami
+        repo_url: "https://charts.bitnami.com/bitnami"
+
+    - name: Add Grafana chart repo
+      kubernetes.core.helm_repository:
+        name: grafana
+        repo_url: "https://grafana.github.io/helm-charts"
+
+    - name: Add Prometheus chart repo
+      kubernetes.core.helm_repository:
+        name: prometheus-community
+        repo_url: "https://prometheus-community.github.io/helm-charts"
+
+    - name: Add Uptrace chart repo
+      kubernetes.core.helm_repository:
+        name: uptrace
+        repo_url: "https://charts.uptrace.dev"
+
+    - name: Install minIO with helm
+      kubernetes.core.helm:
+        update_repo_cache: true
+        name: bitnami
+        chart_ref: bitnami/minio
+        chart_version: 16.0.10
+        release_namespace: default
+        values_files:
+          - /home/vagrant/ansible/files/minio-values.yaml
+
+    - name: Install Grafana with helm
+      kubernetes.core.helm:
+        update_repo_cache: true
+        name: grafana
+        chart_ref: grafana/grafana
+        chart_version: 9.2.2
+        release_namespace: default
+        values_files:
+          - /home/vagrant/ansible/files/grafana-values.yaml
+
+    - name: Install Grafana Loki with helm
+      kubernetes.core.helm:
+        update_repo_cache: true
+        name: loki
+        chart_ref: grafana/loki
+        chart_version: 6.30.1
+        release_namespace: default
+        values_files:
+          - /home/vagrant/ansible/files/loki-values.yaml
+
+    - name: Install Prometheus with helm
+      kubernetes.core.helm:
+        update_repo_cache: true
+        name: prometheus-community
+        chart_ref: prometheus-community/prometheus
+        chart_version: 27.20.0
+        release_namespace: default
+        values_files:
+          - /home/vagrant/ansible/files/prometheus-values.yaml
+
+    - name: Install Uptrace with helm
+      kubernetes.core.helm:
+        update_repo_cache: true
+        name: uptrace
+        chart_ref: uptrace/uptrace
+        chart_version: 1.7.7
+        release_namespace: default
+        values_files:
+          - /home/vagrant/ansible/files/uptrace-values.yaml

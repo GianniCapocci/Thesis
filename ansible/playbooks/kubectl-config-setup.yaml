@@ -1,0 +1,79 @@
+---
+- name: Create app03 certificates
+  hosts: microk8s
+  tasks:
+  - name: Create a certs directory if it does not exist
+    ansible.builtin.file:
+      path: /home/vagrant/certs
+      state: directory
+      owner: vagrant
+      mode: '0755'
+
+  - name: Create app03 vm certificates
+    ansible.builtin.shell: openssl genrsa -out app03-client.key 2048
+    args:
+      chdir: /home/vagrant/certs
+      creates: app03-client.key
+
+  - name: Create app03 vm certificates 2
+    ansible.builtin.shell: openssl req -new -key app03-client.key -out app03-client.csr -subj "/CN=kube-admin"
+    args:
+      chdir: /home/vagrant/certs
+      creates: app03-client.csr
+
+  - name: Create app03 vm certificates 3
+    ansible.builtin.shell: openssl x509 -req -in app03-client.csr -CA /var/snap/microk8s/current/certs/ca.crt -CAkey /var/snap/microk8s/current/certs/ca.key -CAcreateserial -out app03-client.crt -days 3650 -sha256
+    args:
+      chdir: /home/vagrant/certs
+      creates: app03-client.crt
+
+  - name: Fetch files from app03 vm to control vm
+    ansible.builtin.fetch:
+      src: "{{ item }}"
+      dest: /home/vagrant/certs/{{ item | basename }}
+      flat: yes
+    loop:
+      - /home/vagrant/certs/app03-client.crt
+      - /home/vagrant/certs/app03-client.key
+
+- name: Create certificates for control and fetch the ones from app03 vm
+  hosts: control
+  tasks:
+  - name: Create a certs directory if it does not exist
+    ansible.builtin.file:
+      path: /home/vagrant/certs
+      state: directory
+      owner: vagrant
+      mode: '0755'
+
+  - name: Create control vm certificates
+    ansible.builtin.shell: openssl genrsa -out control-client.key 2048
+    args:
+      chdir: /home/vagrant/certs
+      creates: control-client.key
+
+  - name: Create control vm certificates 2
+    ansible.builtin.shell: openssl req -new -key control-client.key -out control-client.csr -subj "/CN=kube-admin"
+    args:
+      chdir: /home/vagrant/certs
+      creates: control-client.csr
+
+  - name: Create control vm certificates 3
+    ansible.builtin.shell: openssl x509 -req -in control-client.csr -CA /var/snap/microk8s/current/certs/ca.crt -CAkey /var/snap/microk8s/current/certs/ca.key -CAcreateserial -out control-client.crt -days 3650 -sha256
+    args:
+      chdir: /home/vagrant/certs
+      creates: control-client.crt
+
+  - name: Create a certs directory if it does not exist
+    ansible.builtin.file:
+      path: /home/vagrant/certs
+      state: directory
+      owner: vagrant
+      mode: '0755'
+
+  - name: Copy kubectl config file to vm
+    ansible.builtin.copy:
+      src: /home/vagrant/ansible/files/kubectl-config.yaml
+      dest: /home/vagrant/.kube/config
+      owner: vagrant
+      mode: '0755'

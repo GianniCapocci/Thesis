@@ -1,0 +1,26 @@
+global:
+  scrape_interval: 30s
+
+extraScrapeConfigs: |
+  - job_name: 'otel-collector'
+    static_configs:
+      - targets: ['otel-collector.default.svc.cluster.local:8889']
+  - job_name: 'loki-job'
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets: ['loki.default.svc.cluster.local:3100']
+  - job_name: 'minio-job'
+    metrics_path: /minio/metrics/v3
+    scheme: http
+    static_configs:
+      - targets: ['bitnami-minio.default.svc.cluster.local:9000']
+  - job_name: 'minio-job-v2'
+    metrics_path: /minio/v2/metrics/cluster
+    scheme: http
+    static_configs:
+      - targets: ['bitnami-minio.default.svc.cluster.local:9000']
+server:
+  ingress:
+    enabled: true
+    hosts: ["prometheus.local"]

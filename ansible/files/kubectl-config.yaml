@@ -1,0 +1,31 @@
+apiVersion: v1
+clusters:
+- cluster:
+    insecure-skip-tls-verify: true
+    server: https://192.168.56.113:16443
+  name: cluster-app03
+- cluster:
+    insecure-skip-tls-verify: true
+    server: https://192.168.56.10:16443
+  name: cluster-control
+contexts:
+- context:
+    cluster: cluster-app03
+    user: admin-app03
+  name: app03
+- context:
+    cluster: cluster-control
+    user: admin-control
+  name: control
+current-context: control
+kind: Config
+preferences: {}
+users:
+- name: admin-app03
+  user:
+    client-certificate: /home/vagrant/certs/app03-client.crt
+    client-key: /home/vagrant/certs/app03-client.key
+- name: admin-control
+  user:
+    client-certificate: /home/vagrant/certs/control-client.crt
+    client-key: /home/vagrant/certs/control-client.key

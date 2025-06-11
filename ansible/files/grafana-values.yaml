@@ -1,0 +1,65 @@
+service:
+  port: 81
+
+adminUser: ${ADMIN_USER}
+adminPassword: ${ADMIN_PASSWORD}
+
+ingress:
+  enabled: true
+  hosts: ["grafana.local"]
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      url: http://prometheus-community-server
+
+    - name: Loki
+      type: loki
+      url: http://loki:3100
+
+grafana.ini:
+  smtp:
+    enabled: true
+    host: smtp.gmail.com:587
+    from_address: ${EMAIL_ADDRESS}
+    from_name: ${EMAIL_ADDRESS}
+    skip_verify: true
+    password: ${EMAIL_PASSWORD}
+    user: "grafanaalerttestlocal"
+
+assertNoLeakedSecrets: false
+
+envFromSecret: grafana-secret
+
+extraVolumeMounts:
+  - name: alert-rules
+    mountPath: /etc/grafana/provisioning/alerting
+    readOnly: true
+  - name: dashboards
+    mountPath: /var/lib/grafana/dashboards
+    readOnly: true
+
+extraVolumes:
+  - name: alert-rules
+    configMap:
+      name: grafana-alert-rules
+  - name: dashboards
+    configMap:
+      name: grafana-dashboards
+
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards

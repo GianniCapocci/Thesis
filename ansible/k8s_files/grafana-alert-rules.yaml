@@ -1,0 +1,1198 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-alert-rules
+  namespace: default
+data:
+  alert-rules.yaml: |
+    apiVersion: 1
+    contactPoints:
+    - orgId: 1
+      name: main email
+      receivers:
+        - uid: fel6hwu9jiu4ge
+          type: email
+          settings:
+            addresses: it21928@hua.gr
+            singleEmail: false
+          disableResolveMessage: true
+    groups:
+        - orgId: 1
+          name: Capacity
+          folder: Minio
+          interval: 10m
+          rules:
+            - uid: ceje8ix1qk0zke
+              title: MinIO Free Capacity
+              condition: ' Threshold'
+              data:
+                - refId: Usable Free
+                  relativeTimeRange:
+                    from: 600
+                    to: 0
+                  datasourceUid: PBFA97CFB590B2093
+                  model:
+                    datasource:
+                        type: prometheus
+                        uid: PBFA97CFB590B2093
+                    disableTextWrap: false
+                    editorMode: builder
+                    expr: minio_cluster_capacity_usable_free_bytes{job="minio-job-v2"}
+                    fullMetaSearch: false
+                    includeNullMetadata: true
+                    instant: true
+                    intervalMs: 1000
+                    legendFormat: __auto
+                    maxDataPoints: 43200
+                    range: false
+                    refId: Usable Free
+                    useBackend: false
+                - refId: Percentage Full
+                  relativeTimeRange:
+                    from: 600
+                    to: 0
+                  datasourceUid: PBFA97CFB590B2093
+                  model:
+                    datasource:
+                        type: prometheus
+                        uid: PBFA97CFB590B2093
+                    disableTextWrap: false
+                    editorMode: code
+                    expr: (minio_cluster_capacity_usable_total_bytes{job="minio-job-v2"} - minio_cluster_capacity_usable_free_bytes{job="minio-job-v2"}) / minio_cluster_capacity_usable_total_bytes{job="minio-job-v2"}
+                    fullMetaSearch: false
+                    includeNullMetadata: true
+                    instant: true
+                    intervalMs: 1000
+                    legendFormat: __auto
+                    maxDataPoints: 43200
+                    range: false
+                    refId: Percentage Full
+                    useBackend: false
+                - refId: ' Threshold'
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 0.8
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params:
+                                - C
+                          reducer:
+                            params: []
+                            type: last
+                          type: query
+                    datasource:
+                        type: __expr__
+                        uid: __expr__
+                    expression: Percentage Full
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    refId: ' Threshold'
+                    type: threshold
+              noDataState: NoData
+              execErrState: Error
+              for: 10m
+              annotations:
+                summary: Capacity less than 20%
+              isPaused: false
+              notification_settings:
+                receiver: main email
+        - orgId: 1
+          name: Job Status
+          folder: Minio
+          interval: 1m
+          rules:
+            - uid: dejeo7xig8zy8c
+              title: MinIO Job Status
+              condition: Threshold
+              data:
+                - refId: Job Status
+                  relativeTimeRange:
+                    from: 600
+                    to: 0
+                  datasourceUid: PBFA97CFB590B2093
+                  model:
+                    datasource:
+                        type: prometheus
+                        uid: PBFA97CFB590B2093
+                    disableTextWrap: false
+                    editorMode: builder
+                    expr: up{job="minio-job"}
+                    fullMetaSearch: false
+                    includeNullMetadata: true
+                    instant: true
+                    intervalMs: 1000
+                    legendFormat: __auto
+                    maxDataPoints: 43200
+                    range: false
+                    refId: Job Status
+                    useBackend: false
+                - refId: Threshold
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 1
+                            type: ne
+                          operator:
+                            type: and
+                          query:
+                            params:
+                                - C
+                          reducer:
+                            params: []
+                            type: last
+                          type: query
+                    datasource:
+                        type: __expr__
+                        uid: __expr__
+                    expression: Job Status
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    refId: Threshold
+                    type: threshold
+              noDataState: NoData
+              execErrState: Error
+              annotations:
+                summary: MinIO job is down
+              isPaused: false
+              notification_settings:
+                receiver: main email
+        - orgId: 1
+          name: Nodes
+          folder: Minio
+          interval: 10m
+          rules:
+            - uid: bejecxuj7csu8f
+              title: MinIO Node is Offline
+              condition: ' Threshold'
+              data:
+                - refId: Online Nodes
+                  relativeTimeRange:
+                    from: 600
+                    to: 0
+                  datasourceUid: PBFA97CFB590B2093
+                  model:
+                    datasource:
+                        type: prometheus
+                        uid: PBFA97CFB590B2093
+                    disableTextWrap: false
+                    editorMode: builder
+                    expr: minio_cluster_nodes_online_total{job="minio-job-v2"}
+                    fullMetaSearch: false
+                    includeNullMetadata: true
+                    instant: true
+                    intervalMs: 1000
+                    legendFormat: __auto
+                    maxDataPoints: 43200
+                    range: false
+                    refId: Online Nodes
+                    useBackend: false
+                - refId: ' Threshold'
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 1
+                            type: lt
+                          operator:
+                            type: and
+                          query:
+                            params:
+                                - C
+                          reducer:
+                            params: []
+                            type: last
+                          type: query
+                    datasource:
+                        type: __expr__
+                        uid: __expr__
+                    expression: Online Nodes
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    refId: ' Threshold'
+                    type: threshold
+              noDataState: NoData
+              execErrState: Error
+              for: 10m
+              annotations:
+                summary: Minio Node is Offline
+              isPaused: false
+              notification_settings:
+                receiver: main email
+        - orgId: 1
+          name: RAM Usage
+          folder: Minio
+          interval: 10m
+          rules:
+            - uid: fejeeik7m3uo0d
+              title: MinIO RAM Usage
+              condition: ' Threshold'
+              data:
+                - refId: RAM Usage In MB
+                  relativeTimeRange:
+                    from: 600
+                    to: 0
+                  datasourceUid: PBFA97CFB590B2093
+                  model:
+                    datasource:
+                        type: prometheus
+                        uid: PBFA97CFB590B2093
+                    disableTextWrap: false
+                    editorMode: code
+                    expr: minio_node_process_resident_memory_bytes{job="minio-job-v2"} / (1024 * 1024)
+                    fullMetaSearch: false
+                    includeNullMetadata: true
+                    instant: true
+                    intervalMs: 1000
+                    legendFormat: __auto
+                    maxDataPoints: 43200
+                    range: false
+                    refId: RAM Usage In MB
+                    useBackend: false
+                - refId: ' Threshold'
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 500
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params:
+                                - C
+                          reducer:
+                            params: []
+                            type: last
+                          type: query
+                    datasource:
+                        type: __expr__
+                        uid: __expr__
+                    expression: RAM Usage In MB
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    refId: ' Threshold'
+                    type: threshold
+              noDataState: NoData
+              execErrState: Error
+              for: 10m
+              annotations:
+                summary: RAM Usage is above 500 MB
+              isPaused: false
+              notification_settings:
+                receiver: main email
+        - orgId: 1
+          name: Job Status
+          folder: Otel Collector
+          interval: 1m
+          rules:
+            - uid: dejf2dijc10cge
+              title: Otel Collector Job Status
+              condition: Threshold
+              data:
+                - refId: Job Status
+                  relativeTimeRange:
+                    from: 600
+                    to: 0
+                  datasourceUid: PBFA97CFB590B2093
+                  model:
+                    datasource:
+                        type: prometheus
+                        uid: PBFA97CFB590B2093
+                    disableTextWrap: false
+                    editorMode: builder
+                    expr: up{job="otel-collector"}
+                    fullMetaSearch: false
+                    hide: false
+                    includeNullMetadata: true
+                    instant: true
+                    intervalMs: 1000
+                    legendFormat: __auto
+                    maxDataPoints: 43200
+                    range: false
+                    refId: Job Status
+                    useBackend: false
+                - refId: Threshold
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 1
+                            type: ne
+                          operator:
+                            type: and
+                          query:
+                            params:
+                                - C
+                          reducer:
+                            params: []
+                            type: last
+                          type: query
+                    datasource:
+                        type: __expr__
+                        uid: __expr__
+                    expression: Job Status
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    refId: Threshold
+                    type: threshold
+              noDataState: NoData
+              execErrState: Error
+              for: 5m
+              annotations:
+                summary: Otel Collector job is down
+              isPaused: false
+              notification_settings:
+                receiver: main email
+        - orgId: 1
+          name: Job Status
+          folder: Prometheus
+          interval: 1m
+          rules:
+            - uid: eejf2izobjfggd
+              title: Prometheus Job Status
+              condition: Threshold
+              data:
+                - refId: Job Status
+                  relativeTimeRange:
+                    from: 600
+                    to: 0
+                  datasourceUid: PBFA97CFB590B2093
+                  model:
+                    datasource:
+                        type: prometheus
+                        uid: PBFA97CFB590B2093
+                    disableTextWrap: false
+                    editorMode: builder
+                    expr: up{job="prometheus"}
+                    fullMetaSearch: false
+                    hide: false
+                    includeNullMetadata: true
+                    instant: true
+                    intervalMs: 1000
+                    legendFormat: __auto
+                    maxDataPoints: 43200
+                    range: false
+                    refId: Job Status
+                    useBackend: false
+                - refId: Threshold
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 1
+                            type: ne
+                          operator:
+                            type: and
+                          query:
+                            params:
+                                - C
+                          reducer:
+                            params: []
+                            type: last
+                          type: query
+                    datasource:
+                        type: __expr__
+                        uid: __expr__
+                    expression: Job Status
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    refId: Threshold
+                    type: threshold
+              noDataState: NoData
+              execErrState: Error
+              for: 1m
+              annotations:
+                summary: Prometheus job is down
+              isPaused: false
+              notification_settings:
+                receiver: main email
+        - orgId: 1
+          name: App failed to start
+          folder: Loki
+          interval: 10m
+          rules:
+            - uid: aejeygr1p6osgb
+              title: App02 failed to start
+              condition: Threshold
+              data:
+                - refId: Error Logs
+                  queryType: range
+                  relativeTimeRange:
+                    from: 21600
+                    to: 0
+                  datasourceUid: P8E80F9AEF21F6940
+                  model:
+                    editorMode: builder
+                    expr: count_over_time({level="ERROR", service_name="native-otel-agent-service"} |= `APPLICATION FAILED TO START` [$__auto])
+                    instant: true
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    queryType: range
+                    refId: Error Logs
+                - refId: Error Logs Number
+                  queryType: expression
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 0
+                                - 0
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params: []
+                          reducer:
+                            params: []
+                            type: avg
+                          type: query
+                    datasource:
+                        name: Expression
+                        type: __expr__
+                        uid: __expr__
+                    expression: Error Logs
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    reducer: last
+                    refId: Error Logs Number
+                    type: reduce
+                - refId: Threshold
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 0
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params:
+                                - C
+                          reducer:
+                            params: []
+                            type: last
+                          type: query
+                    datasource:
+                        type: __expr__
+                        uid: __expr__
+                    expression: Error Logs Number
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    refId: Threshold
+                    type: threshold
+              noDataState: OK
+              execErrState: Error
+              annotations:
+                summary: App02 failed to start (native enviroment)
+              isPaused: false
+              notification_settings:
+                receiver: main email
+            - uid: cejic0clqd9moe
+              title: App03 failed to start
+              condition: Threshold
+              data:
+                - refId: Error Logs
+                  queryType: range
+                  relativeTimeRange:
+                    from: 21600
+                    to: 0
+                  datasourceUid: P8E80F9AEF21F6940
+                  model:
+                    editorMode: builder
+                    expr: count_over_time({level="ERROR", service_name="k8s-otel-agent-service"} |= `APPLICATION FAILED TO START` [$__auto])
+                    instant: true
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    queryType: range
+                    refId: Error Logs
+                - refId: Error Logs Number
+                  queryType: expression
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 0
+                                - 0
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params: []
+                          reducer:
+                            params: []
+                            type: avg
+                          type: query
+                    datasource:
+                        name: Expression
+                        type: __expr__
+                        uid: __expr__
+                    expression: Error Logs
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    reducer: last
+                    refId: Error Logs Number
+                    type: reduce
+                - refId: Threshold
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 0
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params:
+                                - C
+                          reducer:
+                            params: []
+                            type: last
+                          type: query
+                    datasource:
+                        type: __expr__
+                        uid: __expr__
+                    expression: Error Logs Number
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    refId: Threshold
+                    type: threshold
+              noDataState: OK
+              execErrState: Error
+              annotations:
+                summary: App03 failed to start (k8s enviroment)
+              isPaused: false
+              notification_settings:
+                receiver: main email
+            - uid: eejidc0nw4etcf
+              title: App01 failed to start
+              condition: Threshold
+              data:
+                - refId: Error Logs
+                  queryType: range
+                  relativeTimeRange:
+                    from: 21600
+                    to: 0
+                  datasourceUid: P8E80F9AEF21F6940
+                  model:
+                    editorMode: builder
+                    expr: count_over_time({level="ERROR", service_name="docker-otel-agent-service"} |= `APPLICATION FAILED TO START` [$__auto])
+                    instant: true
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    queryType: range
+                    refId: Error Logs
+                - refId: Error Logs Number
+                  queryType: expression
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 0
+                                - 0
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params: []
+                          reducer:
+                            params: []
+                            type: avg
+                          type: query
+                    datasource:
+                        name: Expression
+                        type: __expr__
+                        uid: __expr__
+                    expression: Error Logs
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    reducer: last
+                    refId: Error Logs Number
+                    type: reduce
+                - refId: Threshold
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 0
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params:
+                                - C
+                          reducer:
+                            params: []
+                            type: last
+                          type: query
+                    datasource:
+                        type: __expr__
+                        uid: __expr__
+                    expression: Error Logs Number
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    refId: Threshold
+                    type: threshold
+              noDataState: OK
+              execErrState: Error
+              annotations:
+                summary: App01 failed to start (docker enviroment)
+              isPaused: false
+              notification_settings:
+                receiver: main email
+        - orgId: 1
+          name: Connection refused
+          folder: Loki
+          interval: 10m
+          rules:
+            - uid: bejezx17mv5kwf
+              title: Connection refused App01
+              condition: Threshold
+              data:
+                - refId: Connection Refused
+                  queryType: instant
+                  relativeTimeRange:
+                    from: 21600
+                    to: 0
+                  datasourceUid: P8E80F9AEF21F6940
+                  model:
+                    editorMode: builder
+                    expr: count_over_time({service_name="docker-otel-agent-service"} |~ `(?i)connection refused` [$__auto])
+                    instant: true
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    queryType: instant
+                    refId: Connection Refused
+                - refId: Threshold
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 0
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params:
+                                - C
+                          reducer:
+                            params: []
+                            type: last
+                          type: query
+                    datasource:
+                        type: __expr__
+                        uid: __expr__
+                    expression: Connection Refused Counter
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    refId: Threshold
+                    type: threshold
+                - refId: Connection Refused Counter
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 0
+                                - 0
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params: []
+                          reducer:
+                            params: []
+                            type: avg
+                          type: query
+                    datasource:
+                        name: Expression
+                        type: __expr__
+                        uid: __expr__
+                    expression: Connection Refused
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    reducer: count
+                    refId: Connection Refused Counter
+                    type: reduce
+              noDataState: OK
+              execErrState: Error
+              for: 10m
+              annotations:
+                summary: Connection refused errors in App01 (docker enviroment)
+              isPaused: false
+              notification_settings:
+                receiver: main email
+            - uid: aejidgopq77k0f
+              title: Connection refused App03
+              condition: Threshold
+              data:
+                - refId: Connection Refused
+                  queryType: instant
+                  relativeTimeRange:
+                    from: 21600
+                    to: 0
+                  datasourceUid: P8E80F9AEF21F6940
+                  model:
+                    editorMode: builder
+                    expr: count_over_time({service_name="k8s-otel-agent-service"} |~ `(?i)connection refused` [$__auto])
+                    instant: true
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    queryType: instant
+                    refId: Connection Refused
+                - refId: Threshold
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 0
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params:
+                                - C
+                          reducer:
+                            params: []
+                            type: last
+                          type: query
+                    datasource:
+                        type: __expr__
+                        uid: __expr__
+                    expression: Connection Refused Counter
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    refId: Threshold
+                    type: threshold
+                - refId: Connection Refused Counter
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 0
+                                - 0
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params: []
+                          reducer:
+                            params: []
+                            type: avg
+                          type: query
+                    datasource:
+                        name: Expression
+                        type: __expr__
+                        uid: __expr__
+                    expression: Connection Refused
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    reducer: count
+                    refId: Connection Refused Counter
+                    type: reduce
+              noDataState: OK
+              execErrState: Error
+              for: 10m
+              annotations:
+                summary: Connection refused errors in App03 (k8s enviroment)
+              isPaused: false
+              notification_settings:
+                receiver: main email
+            - uid: aejidky4g7dhce
+              title: Connection refused App02
+              condition: Threshold
+              data:
+                - refId: Connection Refused
+                  queryType: instant
+                  relativeTimeRange:
+                    from: 21600
+                    to: 0
+                  datasourceUid: P8E80F9AEF21F6940
+                  model:
+                    editorMode: builder
+                    expr: count_over_time({service_name="native-otel-agent-service"} |~ `(?i)connection refused` [$__auto])
+                    instant: true
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    queryType: instant
+                    refId: Connection Refused
+                - refId: Threshold
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 0
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params:
+                                - C
+                          reducer:
+                            params: []
+                            type: last
+                          type: query
+                    datasource:
+                        type: __expr__
+                        uid: __expr__
+                    expression: Connection Refused Counter
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    refId: Threshold
+                    type: threshold
+                - refId: Connection Refused Counter
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 0
+                                - 0
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params: []
+                          reducer:
+                            params: []
+                            type: avg
+                          type: query
+                    datasource:
+                        name: Expression
+                        type: __expr__
+                        uid: __expr__
+                    expression: Connection Refused
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    reducer: count
+                    refId: Connection Refused Counter
+                    type: reduce
+              noDataState: OK
+              execErrState: Error
+              for: 10m
+              annotations:
+                summary: Connection refused errors in App02 (native enviroment)
+              isPaused: false
+              notification_settings:
+                receiver: main email
+        - orgId: 1
+          name: Job Status
+          folder: Loki
+          interval: 1m
+          rules:
+            - uid: aejeumfsh82kga
+              title: Loki Job Status
+              condition: Threshold
+              data:
+                - refId: Job Status
+                  relativeTimeRange:
+                    from: 600
+                    to: 0
+                  datasourceUid: PBFA97CFB590B2093
+                  model:
+                    datasource:
+                        type: prometheus
+                        uid: PBFA97CFB590B2093
+                    disableTextWrap: false
+                    editorMode: builder
+                    expr: up{job="loki-job"}
+                    fullMetaSearch: false
+                    includeNullMetadata: true
+                    instant: true
+                    intervalMs: 1000
+                    legendFormat: __auto
+                    maxDataPoints: 43200
+                    range: false
+                    refId: Job Status
+                    useBackend: false
+                - refId: Threshold
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 1
+                            type: ne
+                          operator:
+                            type: and
+                          query:
+                            params:
+                                - C
+                          reducer:
+                            params: []
+                            type: last
+                          type: query
+                    datasource:
+                        type: __expr__
+                        uid: __expr__
+                    expression: Job Status
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    refId: Threshold
+                    type: threshold
+              noDataState: NoData
+              execErrState: Error
+              annotations:
+                summary: Loki job is down
+              isPaused: false
+              notification_settings:
+                receiver: main email
+        - orgId: 1
+          name: Spike in error logs
+          folder: Loki
+          interval: 15m
+          rules:
+            - uid: dejezdl9rn6kgb
+              title: Spike in App02 error logs
+              condition: Threshold
+              data:
+                - refId: Error Logs
+                  queryType: range
+                  relativeTimeRange:
+                    from: 21600
+                    to: 0
+                  datasourceUid: P8E80F9AEF21F6940
+                  model:
+                    editorMode: builder
+                    expr: rate({service_name="native-otel-agent-service", level="ERROR"} [$__auto])
+                    instant: true
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    queryType: range
+                    refId: Error Logs
+                - refId: Error Logs Rate
+                  queryType: expression
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 0
+                                - 0
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params: []
+                          reducer:
+                            params: []
+                            type: avg
+                          type: query
+                    datasource:
+                        name: Expression
+                        type: __expr__
+                        uid: __expr__
+                    expression: Error Logs
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    reducer: count
+                    refId: Error Logs Rate
+                    type: reduce
+                - refId: Threshold
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 5
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params:
+                                - C
+                          reducer:
+                            params: []
+                            type: last
+                          type: query
+                    datasource:
+                        type: __expr__
+                        uid: __expr__
+                    expression: Error Logs Rate
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    refId: Threshold
+                    type: threshold
+              noDataState: OK
+              execErrState: Error
+              annotations:
+                summary: Spike in App02 error logs, above 5 error logs (native enviroment)
+              isPaused: false
+              notification_settings:
+                receiver: main email
+            - uid: dejic7n4ip6o0b
+              title: Spike in App03 error logs
+              condition: Threshold
+              data:
+                - refId: Error Logs
+                  queryType: range
+                  relativeTimeRange:
+                    from: 21600
+                    to: 0
+                  datasourceUid: P8E80F9AEF21F6940
+                  model:
+                    editorMode: builder
+                    expr: rate({service_name="k8s-otel-agent-service", level="ERROR"} [$__auto])
+                    instant: true
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    queryType: range
+                    refId: Error Logs
+                - refId: Error Logs Rate
+                  queryType: expression
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 0
+                                - 0
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params: []
+                          reducer:
+                            params: []
+                            type: avg
+                          type: query
+                    datasource:
+                        name: Expression
+                        type: __expr__
+                        uid: __expr__
+                    expression: Error Logs
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    reducer: count
+                    refId: Error Logs Rate
+                    type: reduce
+                - refId: Threshold
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 5
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params:
+                                - C
+                          reducer:
+                            params: []
+                            type: last
+                          type: query
+                    datasource:
+                        type: __expr__
+                        uid: __expr__
+                    expression: Error Logs Rate
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    refId: Threshold
+                    type: threshold
+              noDataState: OK
+              execErrState: Error
+              annotations:
+                summary: Spike in App03 error logs, above 5 error logs (k8s enviroment)
+              isPaused: false
+              notification_settings:
+                receiver: main email
+            - uid: cejida1cpz5kwa
+              title: Spike in App01 error logs
+              condition: Threshold
+              data:
+                - refId: Error Logs
+                  queryType: range
+                  relativeTimeRange:
+                    from: 21600
+                    to: 0
+                  datasourceUid: P8E80F9AEF21F6940
+                  model:
+                    editorMode: builder
+                    expr: rate({service_name="docker-otel-agent-service", level="ERROR"} [$__auto])
+                    instant: true
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    queryType: range
+                    refId: Error Logs
+                - refId: Error Logs Rate
+                  queryType: expression
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 0
+                                - 0
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params: []
+                          reducer:
+                            params: []
+                            type: avg
+                          type: query
+                    datasource:
+                        name: Expression
+                        type: __expr__
+                        uid: __expr__
+                    expression: Error Logs
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    reducer: count
+                    refId: Error Logs Rate
+                    type: reduce
+                - refId: Threshold
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 5
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params:
+                                - C
+                          reducer:
+                            params: []
+                            type: last
+                          type: query
+                    datasource:
+                        type: __expr__
+                        uid: __expr__
+                    expression: Error Logs Rate
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    refId: Threshold
+                    type: threshold
+              noDataState: OK
+              execErrState: Error
+              annotations:
+                summary: Spike in App01 error logs, above 5 error logs (docker enviroment)
+              isPaused: false
+              notification_settings:
+                receiver: main email

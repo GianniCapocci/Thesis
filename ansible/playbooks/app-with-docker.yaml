@@ -1,0 +1,78 @@
+---
+- hosts: docker
+  tasks:
+
+  - name: Check if Docker is installed
+    shell: docker --version && docker compose version
+    register: docker_version_result
+    ignore_errors: true
+    become: yes
+
+  - name: Set Docker installed fact
+    set_fact:
+      docker_installed: "{{ docker_version_result.rc == 0 }}"
+
+  - name: Include docker playbook if Docker is not installed
+    import_tasks: docker.yaml
+    become: yes
+    when: not docker_installed
+
+  - name: "Clone the Spring repository"
+    git:
+      repo: "https://github.com/GianniCapocci/DevOps.git"
+      dest: "{{ appdir }}"
+      version: "{{ branch }}"
+      force: yes
+
+  - name: "Make .env file for docker compose"
+    copy: remote_src=True src={{ appdir }}/example.env dest={{ appdir }}/.env
+
+  - name: "Populate application.properties"
+    lineinfile:
+      dest: "{{ appdir }}/src/main/resources/application.properties"
+      state: present
+      regexp: "^{{item.key}}="
+      line: "{{item.key}}={{item.value}}"
+    with_items:
+      - "{{app.env | dict2items}}"
+
+  - name: Download javaagent.jar file
+    ansible.builtin.get_url:
+      url: https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.14.0/opentelemetry-javaagent.jar
+      dest: "{{ appdir }}"
+
+  - name: Copy config file
+    ansible.builtin.copy:
+      src: /home/vagrant/ansible/files/agent-config-docker.properties
+      dest: "{{ appdir }}/agent-config-docker.properties"
+
+  - name: Replace nonroot.Dockerfile file
+    ansible.builtin.copy:
+      src: /home/vagrant/ansible/app01_changed_files/nonroot.Dockerfile
+      dest: "{{ appdir }}/nonroot.Dockerfile"
+
+  - name: Replace docker-compose file
+    ansible.builtin.copy:
+      src: /home/vagrant/ansible/app01_changed_files/docker-compose.yaml
+      dest: "{{ appdir }}/docker-compose.yaml"
+
+  - name: Tear down existing services
+    community.docker.docker_compose:
+      project_src: "{{ appdir }}"
+      state: absent
+    become: yes
+
+  - name: Create and start services
+    docker_compose:
+      project_src: "{{ appdir }}"
+      build: true
+      state: present
+    notify: Restart Docker Compose
+    become: yes
+
+  handlers:
+    - name: Restart Docker Compose
+      community.docker.docker_compose:
+        project_src: "{{ appdir }}"
+        restarted: true
+      become: yes

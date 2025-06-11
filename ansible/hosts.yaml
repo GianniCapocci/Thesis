@@ -1,0 +1,20 @@
+---
+docker:
+  hosts:
+    docker-app-vm:
+      ansible_host: app01
+
+native:
+  hosts:
+    native-app-vm:
+      ansible_host: app02
+
+microk8s:
+  hosts:
+    microk8s-app-vm:
+      ansible_host: app03
+
+control:
+  hosts:
+    control-vm:
+      ansible_host: control

@@ -1,0 +1,65 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# README
+#
+# Getting Started:
+# 1. vagrant plugin install vagrant-hostmanager
+# 2. vagrant up
+# 3. vagrant ssh
+#
+# This should put you at the control host
+#  with access, by name, to other vms
+Vagrant.configure(2) do |config|
+    config.hostmanager.enabled = true
+
+    config.vm.box = "ubuntu/jammy64"
+    # config.vm.provider "virtualbox" do |v|
+    #     # v.memory = 3072
+    #     v.memory = 5120
+    #     v.cpus = 4
+    # end
+
+    config.vm.define "control", primary: true do |h|
+        h.vm.provider "virtualbox" do |v|
+            v.memory = 5120
+            v.cpus = 4
+        end
+        h.vm.hostname = "control"
+        h.vm.network "private_network", ip: "192.168.56.10"
+        h.vm.provision "shell", path: "scripts/key.sh"
+        h.vm.synced_folder "/home/john/Desktop/Πτυχιακή/ansible", "/home/vagrant/ansible", create: true
+    end
+
+    config.vm.define "app01" do |h|
+        h.vm.provider "virtualbox" do |v|
+            v.memory = 2048
+            v.cpus = 2
+        end
+        h.vm.hostname = "app01"
+        h.vm.network "private_network", ip: "192.168.56.111"
+        h.vm.provision :shell, inline: 'cat /vagrant/control.pub >> /home/vagrant/.ssh/authorized_keys'
+    end
+
+    config.vm.define "app02" do |h|
+        h.vm.provider "virtualbox" do |v|
+            v.memory = 2048
+            v.cpus = 2
+        end
+        h.vm.hostname = "app02"
+        h.vm.network "private_network", ip: "192.168.56.112"
+        h.vm.provision :shell, inline: 'cat /vagrant/control.pub >> /home/vagrant/.ssh/authorized_keys'
+    end
+
+    config.vm.define "app03" do |h|
+        h.vm.provider "virtualbox" do |v|
+            # v.memory = 2048
+            # v.memory = 2560
+            v.memory = 3072
+            v.cpus = 2
+        end
+        h.vm.hostname = "app03"
+        h.vm.network "private_network", ip: "192.168.56.113"
+        h.vm.provision :shell, inline: 'cat /vagrant/control.pub >> /home/vagrant/.ssh/authorized_keys'
+    end
+end

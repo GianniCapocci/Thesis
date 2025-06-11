@@ -1,0 +1,23 @@
+# Setup the native deployment of the app
+- name: Include spring playbook
+  ansible.builtin.import_playbook: spring.yaml
+
+# Setup the docker deployment of the app
+- name: Include app-with-docker playbook
+  ansible.builtin.import_playbook: app-with-docker.yaml
+
+# Install and setup microk8s on control-vm and microk8s-vm
+- name: Include microk8s-install playbook
+  ansible.builtin.import_playbook: microk8s-install.yaml
+
+# Install the helm charts in control-vm
+- name: Include control-k8s playbook
+  ansible.builtin.import_playbook: control-k8s.yaml
+
+# Deploy the opentelemetry collector in k8s
+- name: Include otel-k8s playbook
+  ansible.builtin.import_playbook: otel-k8s.yaml
+
+# Setup the k8s deployment of the app
+- name: Include app-with-k8s playbook
+  ansible.builtin.import_playbook: app-with-k8s.yaml

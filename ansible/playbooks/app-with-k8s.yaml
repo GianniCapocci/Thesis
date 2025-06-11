@@ -1,0 +1,71 @@
+---
+- hosts: control
+  pre_tasks:
+    - name: Update package cache
+      apt:
+        update_cache: yes
+      become: yes
+
+    - name: Install Python
+      apt:
+        name: python3
+        state: present
+      become: yes
+
+    - name: Install pip3
+      apt:
+        name: python3-pip
+        state: present
+      become: yes
+
+    - name: Install pre-requisites
+      pip:
+        name:
+          - openshift
+          - pyyaml
+          - kubernetes
+      become: yes
+
+  environment:
+    K8S_AUTH_KUBECONFIG: "{{ k8s_kubeconfig }}"
+    K8S_AUTH_CONTEXT: "app03"
+
+  tasks:
+  - name: Render Mysql k8s secret
+    template:
+      src: /home/vagrant/ansible/j2_files/mysql-secret.yaml.j2
+      dest: /home/vagrant/ansible/k8s_files/mysql-secret.yaml
+
+  - name: Render Spring k8s secret
+    template:
+      src: /home/vagrant/ansible/j2_files/spring-secret.yaml.j2
+      dest: /home/vagrant/ansible/k8s_files/spring-secret.yaml
+
+  - name: Render DockerHub secret
+    template:
+      src: /home/vagrant/ansible/j2_files/dockerhub-secret.yaml.j2
+      dest: /home/vagrant/ansible/k8s_files/dockerhub-secret.yaml
+
+  - name: Create a Deployment of mysql
+    kubernetes.core.k8s:
+      state: present
+      src: /home/vagrant/ansible/k8s_files/{{ item }}
+      context: app03
+    loop:
+      - mysql-secret.yaml
+      - mysql-pvc.yaml
+      - mysql-deployment.yaml
+      - mysql-svc.yaml
+
+  - name: Create a Deployment of spring
+    kubernetes.core.k8s:
+      state: present
+      src: /home/vagrant/ansible/k8s_files/{{ item }}
+      context: app03
+    loop:
+      - spring-secret.yaml
+      - dockerhub-secret.yaml
+      - spring-pvc.yaml
+      - spring-deployment.yaml
+      - spring-svc.yaml
+      - spring-ingress.yaml

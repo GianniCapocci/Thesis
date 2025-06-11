@@ -1,0 +1,43 @@
+auth:
+  existingSecret: minio-secret
+  rootUserSecretKey: ROOT_USER
+  rootPasswordSecretKey: ROOT_PASSWORD
+
+defaultBuckets: "loki-data"
+
+metrics:
+  enabled: true
+  prometheusAuthType: public
+
+ingress:
+  enabled: true
+
+sidecars:
+  - name: mc-sidecar
+    image: minio/mc
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        echo "Waiting for MinIO to be available..."
+        until mc alias set myminio http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD; do
+          echo "Waiting for MinIO..."
+          sleep 2
+        done
+
+        mc ilm add myminio/loki-data --expiry-days 30
+
+        echo "Done. Sleeping indefinitely..."
+        tail -f /dev/null
+    env:
+      - name: MINIO_ROOT_USER
+        valueFrom:
+          secretKeyRef:
+            name: minio-secret
+            key: ROOT_USER
+      - name: MINIO_ROOT_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: minio-secret
+            key: ROOT_PASSWORD

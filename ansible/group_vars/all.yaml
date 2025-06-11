@@ -1,0 +1,27 @@
+ansible_python_interpreter: /usr/bin/python3
+
+appdir: "{{ ansible_user_dir }}/spring"
+branch: "master"
+appuser: "{{ansible_user_id}}"
+appgroup: "{{ansible_user_gid}}"
+app_port: 9090
+
+app:
+  env:
+    server.port: "{{app_port}}"
+    spring.datasource.username: appuser
+    spring.datasource.password: apppassword
+    spring.datasource.url: jdbc:mysql://localhost:3306/appdb
+
+# mysql secret
+mysql_password: 123
+mysql_root_password: 123
+
+# spring secret
+# password for email that sends the alerts
+spring_mail_password: 123
+spring_datasource_password: 123
+spring_email: test@test.gr
+
+# K8S_AUTH_KUBECONFIG
+k8s_kubeconfig: "/home/vagrant/.kube/config"

@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  labels:
+    app: mysql
+  name: mysql-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_PASSWORD
+            - name: MYSQL_USER
+              value: dbuser
+            - name: MYSQL_DATABASE
+              value: springdb
+          image: mysql:8.0
+          name: mysql
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: db-pvc
+          resources:
+            limits:
+              cpu: 750m
+              memory: 1000Mi
+            requests:
+              cpu: 500m
+              memory: 600Mi
+      volumes:
+        - name: db-pvc
+          persistentVolumeClaim:
+            claimName: db-pvc

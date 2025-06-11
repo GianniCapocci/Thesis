@@ -1,0 +1,14 @@
+# grafana secret
+grafana_email_address: test@test.gr
+# password for email that sends the alerts
+grafana_email_password: 123
+grafana_admin_user: myadmin123
+grafana_admin_password: mypassword123
+
+# minio secret
+minio_root_user: admin123
+minio_root_password: 12345678
+
+# loki values
+loki_access_key_id: admin123
+loki_secret_access_key: 12345678

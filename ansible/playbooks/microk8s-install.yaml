@@ -1,0 +1,52 @@
+---
+- hosts: control:microk8s
+  become: yes
+  tasks:
+    - name: Update package cache
+      apt:
+        update_cache: yes
+      become: yes
+
+    - name: Install microk8s
+      community.general.snap:
+        classic: true
+        name:
+          - microk8s
+
+    - name: Adding user to group
+      user:
+        name: vagrant
+        groups: microk8s
+        append: yes
+
+    - name: Change kube folder ownership
+      file:
+        path: /home/vagrant/.kube
+        owner: vagrant
+        group: vagrant
+        state: directory
+
+    - name: Reset SSH connection to apply group changes
+      meta: reset_connection
+
+    - name: Enable microk8s common modules
+      command: microk8s enable dns cert-manager ingress hostpath-storage metrics-server
+
+    - name: Install Python and pip
+      apt:
+        name: "{{ item }}"
+        state: present
+      become: true
+      loop:
+        - python3
+        - python3-pip
+
+    - name: Install python library (kubernetes)
+      ansible.builtin.pip:
+        name: kubernetes
+
+- name: Include kubectl-install playbook
+  ansible.builtin.import_playbook: kubectl-install.yaml
+
+- name: Include kubectl-config-setup-app03 playbook
+  ansible.builtin.import_playbook: kubectl-config-setup.yaml

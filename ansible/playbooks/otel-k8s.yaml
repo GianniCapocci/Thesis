@@ -1,0 +1,16 @@
+---
+- hosts: control
+
+  environment:
+    K8S_AUTH_KUBECONFIG: "{{ k8s_kubeconfig }}"
+    K8S_AUTH_CONTEXT: "control"
+
+  tasks:
+  - name: Create a Deployment of otel-collector
+    kubernetes.core.k8s:
+      state: present
+      src: /home/vagrant/ansible/k8s_files/{{ item }}
+    loop:
+      - otel-collector-configmap.yaml
+      - otel-collector-svc.yaml
+      - otel-collector-deployment.yaml

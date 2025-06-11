@@ -1,0 +1,13 @@
+---
+- hosts: control:microk8s
+  become: yes
+
+  tasks:
+  - name: curl
+    shell: curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+  - name: chmod
+    shell: chmod +x kubectl
+
+  - name: mv
+    shell: mv kubectl /usr/local/bin/kubectl
